@@ -40,7 +40,7 @@ class FocusPopApp {
             color: 'work'
         },
         'short-break': {
-            duration: 0.1 * 60,
+            duration: 5 * 60,
             label: 'Break\'s over! Hope you feel refreshed. Ready to dive back in?',
             color: 'short-break'
         },
