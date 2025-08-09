@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <radialGradient id="tomatoGradient" cx="0.3" cy="0.3" r="0.7">
+      <stop offset="0%" stop-color="#ff6b6b"/>
+      <stop offset="70%" stop-color="#ee5a52"/>
+      <stop offset="100%" stop-color="#d63031"/>
+    </radialGradient>
+    <radialGradient id="stemGradient" cx="0.3" cy="0.3" r="0.8">
+      <stop offset="0%" stop-color="#00b894"/>
+      <stop offset="100%" stop-color="#00a085"/>
+    </radialGradient>
+  </defs>
+  
+  <!-- Tomato body -->
+  <ellipse cx="50" cy="55" rx="30" ry="28" fill="url(#tomatoGradient)"/>
+  
+  <!-- Stem/leaves -->
+  <path d="M35 30 Q40 25 45 30 Q50 20 55 30 Q60 25 65 30 Q50 35 50 40 Q50 35 35 30Z" fill="url(#stemGradient)"/>
+  
+  <!-- Highlight -->
+  <ellipse cx="42" cy="45" rx="8" ry="12" fill="#ff8787" opacity="0.6"/>
+  
+  <!-- Small accent -->
+  <circle cx="38" cy="42" r="3" fill="#ffaaaa" opacity="0.8"/>
+</svg>
