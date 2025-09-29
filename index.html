@@ -118,6 +118,25 @@
             </button>
         </header>
 
+        <!-- Import/Export Buttons -->
+        <div class="flex gap-2 justify-center mb-4 animate-fade-in-down" style="animation-delay: 0.1s; animation-fill-mode: both;">
+            <button 
+                id="exportBtn" 
+                class="bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-lg text-sm"
+                onclick="app.exportData()"
+            >
+                📥 Export Data
+            </button>
+            <button 
+                id="importBtn" 
+                class="bg-green-500 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-lg text-sm"
+                onclick="document.getElementById('importFile').click()"
+            >
+                📤 Import Data
+            </button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="app.importData(event)">
+        </div>
+
         <div class="flex flex-col lg:flex-row gap-8 mt-24">
             <div class="flex-1 lg:max-w-2xl">
                 <!-- Main Timer -->
@@ -180,6 +199,64 @@
                         <div id="sessionIcons" class="flex justify-center gap-2 flex-wrap">
                         </div>
                     </section>
+
+                    <!-- Set Management -->
+                    <section 
+                        class="text-center mt-8 animate-fade-in-up"
+                        style="animation-delay: 0.7s; animation-fill-mode: both;"
+                    >
+                        <div class="flex flex-col gap-4 items-center max-w-md mx-auto">
+                            <div class="w-full">
+                                <label for="setNameInput" class="block text-left text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                    Name Your Current Set
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="setNameInput" 
+                                    class="w-full p-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white transition-all duration-300 focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900" 
+                                    placeholder="e.g., Morning Focus, Project X, Study Session"
+                                >
+                                <p class="text-xs text-gray-500 dark:text-gray-400 text-left mt-1">
+                                    This name will be saved when you finish the current set
+                                </p>
+                            </div>
+                            <div class="flex gap-4 justify-center flex-wrap">
+                                <button type="button"
+                                    id="finishSetBtn" 
+                                    class="bg-green-500 text-white px-6 py-3 rounded-full font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-lg"
+                                    onclick="app.finishCurrentSet()"
+                                >
+                                    Finish Current Set
+                                </button>
+                                <button type="button"
+                                    id="newSetBtn" 
+                                    class="bg-purple-500 text-white px-6 py-3 rounded-full font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-lg"
+                                    onclick="app.startNewSet()"
+                                >
+                                    Start New Set
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Achievements Section -->
+                    <div class="mt-12 animate-fade-in-up" style="animation-delay: 0.9s; animation-fill-mode: both;">
+                        <button 
+                            type="button"
+                            id="achievementToggle"
+                            class="w-full flex items-center justify-between p-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white font-bold text-xl mb-4 transition-all duration-300 hover:shadow-lg"
+                            onclick="app.toggleAchievements()"
+                        >
+                            <span>🏅 Achievements</span>
+                            <span id="achievementToggleIcon" class="text-2xl transition-transform duration-300">▼</span>
+                        </button>
+                        <div 
+                            id="achievementList" 
+                            class="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden transition-all duration-300"
+                            style="max-height: 0; opacity: 0;"
+                        >
+                        </div>
+                    </div>
                 </main>
             </div>
 
@@ -214,7 +291,21 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- History Section -->
+                <div class="mt-12 animate-fade-in-up" style="animation-delay: 0.8s; animation-fill-mode: both;">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-700 dark:text-gray-300">History</h2>
+                    <div 
+                        id="historyList" 
+                        class="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6 border-2 border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto"
+                    >
+                        <div class="text-center text-gray-500 dark:text-gray-400 italic">
+                            No completed sets yet. Finish a set to see it here!
+                        </div>
+                    </div>
+                </div>
             </div>
+
         </div>
     </div>
 

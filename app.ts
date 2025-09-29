@@ -5,6 +5,24 @@ interface Task {
     completed: boolean;
 }
 
+interface PomodoroSet {
+    id: number;
+    date: string;
+    name: string;
+    completedSessions: number;
+    tasks: Task[];
+}
+
+interface Achievement {
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+    condition: (app: FocusPopApp) => boolean;
+    unlocked: boolean;
+    unlockedDate?: string;
+}
+
 interface TimerMode {
     duration: number;
     label: string;
@@ -17,6 +35,10 @@ interface AppData {
     completedSessions: number;
     tasks: Task[];
     isDark: boolean;
+    history: PomodoroSet[];
+    achievements?: Achievement[]; 
+    totalBreaks?: number;
+    achievementsExpanded?: boolean;
 }
 
 type ModeType = 'work' | 'short-break' | 'long-break';
@@ -31,11 +53,351 @@ class FocusPopApp {
     private tasks: Task[] = [];
     private savedData?: AppData;
     private characterMessageTimeout: number | null = null;
+    private history: PomodoroSet[] = [];
+    private achievementsExpanded: boolean = false;
+
+    private achievements: Achievement[] = [
+        {
+            id: 'first-blood',
+            name: 'First Blood',
+            description: 'Complete your very first Pomodoro session',
+            icon: '🎯',
+            condition: (app) => app.getCompletedSessions() >= 1,
+            unlocked: false
+        },
+        {
+            id: 'getting-serious',
+            name: 'Getting Serious Now',
+            description: 'Complete a full set of 8 sessions',
+            icon: '🔥',
+            condition: (app) => app.getHistory().some(set => set.completedSessions >= 8),
+            unlocked: false
+        },
+        {
+            id: 'procrastination-slayer',
+            name: 'Procrastination Slayer',
+            description: 'Complete 3 sets in your history',
+            icon: '⚔️',
+            condition: (app) => app.getHistory().length >= 3,
+            unlocked: false
+        },
+        {
+            id: 'night-owl',
+            name: 'Night Owl Warrior',
+            description: 'Complete a session after 10 PM',
+            icon: '🦉',
+            condition: (app) => {
+                const hour = new Date().getHours();
+                return hour >= 22 && app.getCompletedSessions() >= 1;
+            },
+            unlocked: false
+        },
+        {
+            id: 'early-bird',
+            name: 'Early Bird Gets the Worm',
+            description: 'Complete a session before 7 AM',
+            icon: '🐦',
+            condition: (app) => {
+                const hour = new Date().getHours();
+                return hour < 7 && app.getCompletedSessions() >= 1;
+            },
+            unlocked: false
+        },
+        {
+            id: 'task-master',
+            name: 'Task Demolition Expert',
+            description: 'Complete 10 tasks across all your sets',
+            icon: '💣',
+            condition: (app) => {
+                const totalCompleted = app.getHistory().reduce((sum, set) => 
+                    sum + set.tasks.filter(t => t.completed).length, 0);
+                return totalCompleted >= 10;
+            },
+            unlocked: false
+        },
+        {
+            id: 'marathon',
+            name: 'Marathon Legend',
+            description: 'Complete 5 sets in your history',
+            icon: '🏃',
+            condition: (app) => app.getHistory().length >= 5,
+            unlocked: false
+        },
+        {
+            id: 'consistency',
+            name: 'Habit Hacker',
+            description: 'Complete 10 total sessions',
+            icon: '🎮',
+            condition: (app) => {
+                const total = app.getHistory().reduce((sum, set) => sum + set.completedSessions, 0);
+                return total + app.getCompletedSessions() >= 10;
+            },
+            unlocked: false
+        },
+        {
+            id: 'overachiever',
+            name: 'Certified Overachiever',
+            description: 'Complete 50 total sessions',
+            icon: '🏆',
+            condition: (app) => {
+                const total = app.getHistory().reduce((sum, set) => sum + set.completedSessions, 0);
+                return total + app.getCompletedSessions() >= 50;
+            },
+            unlocked: false
+        },
+        {
+            id: 'multitasker',
+            name: 'Multitasking Myth Buster',
+            description: 'Complete a set with 5 or more tasks',
+            icon: '🎪',
+            condition: (app) => app.getHistory().some(set => set.tasks.length >= 5),
+            unlocked: false
+        },
+        {
+            id: 'speed-demon',
+            name: 'Speed Demon',
+            description: 'Complete 3 sessions in a row without long breaks',
+            icon: '⚡',
+            condition: (app) => app.getCompletedSessions() >= 3,
+            unlocked: false
+        },
+        {
+            id: 'zen-master',
+            name: 'Zen Master',
+            description: 'Complete 20 break sessions',
+            icon: '🧘',
+            condition: (app) => app.getTotalBreaks() >= 20,
+            unlocked: false
+        }
+    ];
+
+    private totalBreaks: number = 0;
+
+    public getCompletedSessions(): number {
+        return this.completedSessions;
+    }
+
+    public getHistory(): PomodoroSet[] {
+        return this.history;
+    }
+
+    public getTotalBreaks(): number {
+        return this.totalBreaks;
+    }
+
+    private checkAchievements(): void {
+        let newUnlocks: Achievement[] = [];
+        
+        this.achievements.forEach(achievement => {
+            if (!achievement.unlocked && achievement.condition(this)) {
+                achievement.unlocked = true;
+                achievement.unlockedDate = new Date().toLocaleString();
+                newUnlocks.push(achievement);
+            }
+        });
+        
+        if (newUnlocks.length > 0) {
+            this.showAchievementNotification(newUnlocks[0]);
+            this.saveData();
+        }
+    }
+
+    private showAchievementNotification(achievement: Achievement): void {
+        // Show character message
+        this.elements.characterMessage.textContent = `🎉 Achievement Unlocked: ${achievement.name}! ${achievement.description}`;
+        this.elements.characterEmoji.textContent = achievement.icon;
+        
+        this.elements.characterBubble.className = 'character-bubble animate-float-in achievement-glow';
+        
+        setTimeout(() => {
+            this.elements.characterBubble.classList.remove('animate-float-in');
+        }, 800);
+        
+        this.scheduleCharacterHide(10000);
+        
+        // Browser notification
+        this.showNotification(`Achievement Unlocked: ${achievement.name}!`);
+    }
+
+    private renderAchievements(): void {
+        const unlockedCount = this.achievements.filter(a => a.unlocked).length;
+        const totalCount = this.achievements.length;
+        
+        this.elements.achievementList.innerHTML = `
+            <div class="col-span-full mb-4 p-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white text-center">
+                <div class="text-3xl font-bold">${unlockedCount} / ${totalCount}</div>
+                <div class="text-sm">Achievements Unlocked</div>
+            </div>
+            ${this.achievements.map(achievement => `
+                <div class="achievement-card ${achievement.unlocked ? 'unlocked' : 'locked'} bg-white dark:bg-gray-900 border-2 ${achievement.unlocked ? 'border-yellow-400' : 'border-gray-300 dark:border-gray-700'} rounded-xl p-4 transition-all duration-300 ${achievement.unlocked ? 'hover:transform hover:scale-105' : ''}">
+                    <div class="flex items-start gap-3">
+                        <div class="text-4xl ${achievement.unlocked ? '' : 'grayscale opacity-30'}">${achievement.icon}</div>
+                        <div class="flex-1">
+                            <div class="font-bold text-lg ${achievement.unlocked ? 'text-gray-800 dark:text-white' : 'text-gray-400 dark:text-gray-600'}">${achievement.name}</div>
+                            <div class="text-sm ${achievement.unlocked ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400 dark:text-gray-600'}">${achievement.description}</div>
+                            ${achievement.unlocked && achievement.unlockedDate ? `
+                                <div class="text-xs text-yellow-600 dark:text-yellow-400 mt-1">Unlocked: ${achievement.unlockedDate}</div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        `;
+        
+        // Restore expanded state after rendering
+        if (this.achievementsExpanded) {
+            setTimeout(() => {
+                this.elements.achievementList.style.maxHeight = this.elements.achievementList.scrollHeight + 'px';
+            }, 0);
+        }
+    }
+
+    public toggleAchievements(): void {
+        this.achievementsExpanded = !this.achievementsExpanded;
+        
+        if (this.achievementsExpanded) {
+            this.elements.achievementList.style.maxHeight = this.elements.achievementList.scrollHeight + 'px';
+            this.elements.achievementList.style.opacity = '1';
+            this.elements.achievementToggleIcon.style.transform = 'rotate(180deg)';
+        } else {
+            this.elements.achievementList.style.maxHeight = '0';
+            this.elements.achievementList.style.opacity = '0';
+            this.elements.achievementToggleIcon.style.transform = 'rotate(0deg)';
+        }
+        
+        this.saveData();
+    }
+
+    public exportData(): void {
+        const data: AppData = {
+            currentMode: this.currentMode,
+            timeLeft: this.timeLeft,
+            completedSessions: this.completedSessions,
+            tasks: this.tasks,
+            isDark: document.documentElement.classList.contains('dark'),
+            history: this.history,
+            achievements: this.achievements,
+            totalBreaks: this.totalBreaks,
+            achievementsExpanded: this.achievementsExpanded
+        };
+        
+        const dataStr = JSON.stringify(data, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `focuspop-backup-${new Date().toISOString().split('T')[0]}.json`;
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        URL.revokeObjectURL(url);
+        
+        this.showCharacterMessage('taskComplete', 'happy');
+        this.elements.characterMessage.textContent = 'Data exported successfully! Your backup is ready.';
+    }
+
+    public importData(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+        
+        if (!file) return;
+        
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            try {
+                const importedData: AppData = JSON.parse(e.target?.result as string);
+                
+                // Validate the imported data has required fields
+                if (!importedData || typeof importedData !== 'object') {
+                    throw new Error('Invalid data format');
+                }
+                
+                // Confirm before importing
+                const confirmed = confirm(
+                    'This will replace all your current data with the imported data. ' +
+                    'Make sure you have exported your current data if you want to keep it. Continue?'
+                );
+                
+                if (!confirmed) {
+                    input.value = ''; // Reset file input
+                    return;
+                }
+                
+                // Import the data
+                this.currentMode = (importedData.currentMode as ModeType) || 'work';
+                this.timeLeft = importedData.timeLeft || 25 * 60;
+                this.completedSessions = importedData.completedSessions || 0;
+                this.tasks = importedData.tasks || [];
+                this.history = importedData.history || [];
+                this.totalBreaks = importedData.totalBreaks || 0;
+                this.achievementsExpanded = importedData.achievementsExpanded || false;
+                
+                // Restore theme
+                if (importedData.isDark) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                
+                // Restore achievements
+                if (importedData.achievements) {
+                    importedData.achievements.forEach(savedAch => {
+                        const achievement = this.achievements.find(a => a.id === savedAch.id);
+                        if (achievement) {
+                            achievement.unlocked = savedAch.unlocked;
+                            achievement.unlockedDate = savedAch.unlockedDate;
+                        }
+                    });
+                }
+                
+                // Update UI
+                this.switchMode(this.currentMode);
+                this.renderTasks();
+                this.updateSessionIcons();
+                this.updateThemeIcon();
+                this.renderHistory();
+                this.renderAchievements();
+                
+                // Restore expanded state
+                if (this.achievementsExpanded) {
+                    setTimeout(() => {
+                        this.elements.achievementList.style.maxHeight = this.elements.achievementList.scrollHeight + 'px';
+                        this.elements.achievementList.style.opacity = '1';
+                        this.elements.achievementToggleIcon.style.transform = 'rotate(180deg)';
+                    }, 100);
+                }
+                
+                // Save to localStorage
+                this.saveData();
+                
+                // Show success message
+                this.showCharacterMessage('milestone', 'excited');
+                this.elements.characterMessage.textContent = 'Data imported successfully! Welcome back!';
+                
+            } catch (error) {
+                alert('Error importing data: Invalid file format. Please select a valid FocusPop backup file.');
+                console.error('Import error:', error);
+            } finally {
+                input.value = ''; // Reset file input
+            }
+        };
+        
+        reader.onerror = () => {
+            alert('Error reading file. Please try again.');
+            input.value = '';
+        };
+        
+        reader.readAsText(file);
+    }
 
     // Configuration for different timer modes
     private readonly modes: Record<ModeType, TimerMode> = {
         work: {
-            duration: 25 * 60,
+            duration: 25 * 0.2,
             label: 'Well done! You just completed 25 minutes of deep focus. Keep the momentum going!',
             color: 'work'
         },
@@ -126,7 +488,12 @@ class FocusPopApp {
         characterBubble: document.getElementById('characterBubble') as HTMLDivElement,
         characterEmoji: document.getElementById('characterEmoji') as HTMLDivElement,
         characterMessage: document.getElementById('characterMessage') as HTMLDivElement,
-        dismissCharacter: document.getElementById('dismissCharacter') as HTMLButtonElement
+        dismissCharacter: document.getElementById('dismissCharacter') as HTMLButtonElement,
+        historyList: document.getElementById('historyList') as HTMLDivElement,
+        setNameInput: document.getElementById('setNameInput') as HTMLInputElement,
+        achievementList: document.getElementById('achievementList') as HTMLDivElement,
+        achievementToggle: document.getElementById('achievementToggle') as HTMLButtonElement,
+        achievementToggleIcon: document.getElementById('achievementToggleIcon') as HTMLSpanElement,
     };
 
     // Initialize app
@@ -144,6 +511,7 @@ class FocusPopApp {
         this.updateSessionIcons(); // this will update the tomato icon opacity if a session is completed 
         this.updateThemeIcon(); // update the theme icon (light/dark)
         this.bindCharacterEvents(); // bind character events
+        this.renderAchievements(); // display achievements
     }
 
     private bindCharacterEvents(): void {
@@ -358,6 +726,8 @@ class FocusPopApp {
         
         this.playNotification();
         this.showNotification(this.modes[this.currentMode].label);
+        // Check achievements
+        this.checkAchievements();
         
         // Auto-switch to appropriate mode
         if (this.currentMode === 'work') {
@@ -482,6 +852,82 @@ class FocusPopApp {
         this.saveData();
     }
 
+    public finishCurrentSet(): void {
+        const setName = this.elements.setNameInput.value.trim() || `Set ${this.history.length + 1}`;
+        
+        const setData: PomodoroSet = {
+            id: Date.now(),
+            name: setName,
+            date: new Date().toLocaleString(),
+            completedSessions: this.completedSessions,
+            tasks: [...this.tasks]
+        };
+        
+        this.history.unshift(setData);
+        this.completedSessions = 0;
+        this.tasks = [];
+        this.elements.setNameInput.value = '';
+        
+        this.updateSessionIcons();
+        this.renderTasks();
+        this.renderHistory();
+        this.saveData();
+        
+        this.showCharacterMessage('milestone', 'excited');
+    }
+
+    public startNewSet(): void {
+        if (this.completedSessions > 0 || this.tasks.length > 0) {
+            if (confirm('This will save your current progress and start a new set. Continue?')) {
+                this.finishCurrentSet();
+            }
+        } else {
+            this.showCharacterMessage('welcome', 'happy');
+        }
+    }
+
+    private renderHistory(): void {
+        if (this.history.length === 0) {
+            this.elements.historyList.innerHTML = `
+                <div class="text-center text-gray-500 dark:text-gray-400 italic">
+                    No completed sets yet. Finish a set to see it here!
+                </div>
+            `;
+            return;
+        }
+        
+        this.elements.historyList.innerHTML = this.history.map(set => `
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-3 transition-all duration-300 hover:transform hover:translate-x-1">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <div class="font-bold text-xl text-gray-800 dark:text-white mb-1">${set.name}</div>
+                        <div class="font-semibold text-lg">${set.completedSessions}/8 Sessions</div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">${set.date}</div>
+                    </div>
+                    <button class="text-red-500 hover:bg-red-50 dark:hover:bg-red-900 p-2 rounded-lg transition-all duration-300" onclick="app.deleteHistory(${set.id})">
+                        🗑️
+                    </button>
+                </div>
+                ${set.tasks.length > 0 ? `
+                    <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <div class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Tasks:</div>
+                        ${set.tasks.map(task => `
+                            <div class="text-sm ${task.completed ? 'line-through opacity-60' : ''} mb-1">
+                                ${task.completed ? '✓' : '○'} ${task.text}
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `).join('');
+    }
+
+    public deleteHistory(setId: number): void {
+        this.history = this.history.filter(s => s.id !== setId);
+        this.renderHistory();
+        this.saveData();
+    }
+
     private renderTasks(): void {
         if (this.tasks.length === 0) {
             this.elements.taskList.innerHTML = `
@@ -520,7 +966,11 @@ class FocusPopApp {
             timeLeft: this.timeLeft,
             completedSessions: this.completedSessions,
             tasks: this.tasks,
-            isDark: document.documentElement.classList.contains('dark')
+            isDark: document.documentElement.classList.contains('dark'),
+            history: this.history,
+            achievements: this.achievements,
+            totalBreaks: this.totalBreaks,
+            achievementsExpanded: this.achievementsExpanded 
         };
         
         localStorage.setItem('focusAppData', JSON.stringify(data));
@@ -537,6 +987,19 @@ class FocusPopApp {
             this.timeLeft = parsedData.timeLeft;
             this.completedSessions = parsedData.completedSessions;
             this.tasks = parsedData.tasks || [];
+            this.history = parsedData.history || [];
+            this.totalBreaks = parsedData.totalBreaks || 0;
+            this.achievementsExpanded = parsedData.achievementsExpanded || false;
+            
+            if (parsedData.achievements) {
+                parsedData.achievements.forEach(savedAch => {
+                    const achievement = this.achievements.find(a => a.id === savedAch.id);
+                    if (achievement) {
+                        achievement.unlocked = savedAch.unlocked;
+                        achievement.unlockedDate = savedAch.unlockedDate;
+                    }
+                });
+            }
 
             if (parsedData.isDark) {
                 document.documentElement.classList.add('dark');
@@ -548,6 +1011,17 @@ class FocusPopApp {
             this.renderTasks();
             this.updateSessionIcons();
             this.updateThemeIcon();
+            this.renderHistory();
+            this.renderAchievements();
+            
+            // Restore expanded state
+            if (this.achievementsExpanded) {
+                setTimeout(() => {
+                    this.elements.achievementList.style.maxHeight = this.elements.achievementList.scrollHeight + 'px';
+                    this.elements.achievementList.style.opacity = '1';
+                    this.elements.achievementToggleIcon.style.transform = 'rotate(180deg)';
+                }, 100);
+            }
         }
     }
 }

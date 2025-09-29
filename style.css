@@ -181,6 +181,27 @@
     border-bottom: 2px solid rgba(75, 85, 99, 0.3);
 }
 
+.achievement-glow {
+    animation: achievement-pulse 2s ease-in-out infinite;
+}
+
+@keyframes achievement-pulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(234, 179, 8, 0.4), 0 0 40px rgba(234, 179, 8, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(234, 179, 8, 0.6), 0 0 60px rgba(234, 179, 8, 0.3);
+    }
+}
+
+.achievement-card.locked {
+    filter: grayscale(60%);
+}
+
+.achievement-card.unlocked {
+    background: linear-gradient(135deg, rgba(234, 179, 8, 0.1), rgba(234, 179, 8, 0.05));
+}
+
 /* Enhanced Animations */
 @keyframes float-in {
     0% {
