@@ -397,7 +397,7 @@ class FocusPopApp {
     // Configuration for different timer modes
     private readonly modes: Record<ModeType, TimerMode> = {
         work: {
-            duration: 25 * 0.2,
+            duration: 25 * 60,
             label: 'Well done! You just completed 25 minutes of deep focus. Keep the momentum going!',
             color: 'work'
         },
