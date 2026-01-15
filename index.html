@@ -110,12 +110,21 @@
                 <div class="text-3xl" id="headerEmoji">🍅</div>
                 <div class="text-2xl font-bold gradient-logo">FocusPop</div>
             </div>
-            <button 
-                id="themeToggle" 
-                class="relative bg-gray-100 dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-full p-2 cursor-pointer transition-all duration-300 w-16 h-9 flex items-center hover:scale-105"
-            >
-                <div class="absolute left-1 transition-all duration-300 text-lg theme-icon">☀️</div>
-            </button>
+            <div class="flex items-center gap-3">
+                <button 
+                    id="achievementBtn"
+                    class="bg-gray-100 dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-full p-2 cursor-pointer transition-all duration-300 w-10 h-10 flex items-center justify-center hover:scale-105 text-xl"
+                    onclick="app.toggleAchievementModal()"
+                >
+                    🏅
+                </button>
+                <button 
+                    id="themeToggle" 
+                    class="relative bg-gray-100 dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-full p-2 cursor-pointer transition-all duration-300 w-16 h-9 flex items-center hover:scale-105"
+                >
+                    <div class="absolute left-1 transition-all duration-300 text-lg theme-icon">☀️</div>
+                </button>
+            </div>
         </header>
 
         <!-- Import/Export Buttons -->
@@ -238,25 +247,6 @@
                             </div>
                         </div>
                     </section>
-
-                    <!-- Achievements Section -->
-                    <div class="mt-12 animate-fade-in-up" style="animation-delay: 0.9s; animation-fill-mode: both;">
-                        <button 
-                            type="button"
-                            id="achievementToggle"
-                            class="w-full flex items-center justify-between p-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white font-bold text-xl mb-4 transition-all duration-300 hover:shadow-lg"
-                            onclick="app.toggleAchievements()"
-                        >
-                            <span>🏅 Achievements</span>
-                            <span id="achievementToggleIcon" class="text-2xl transition-transform duration-300">▼</span>
-                        </button>
-                        <div 
-                            id="achievementList" 
-                            class="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden transition-all duration-300"
-                            style="max-height: 0; opacity: 0;"
-                        >
-                        </div>
-                    </div>
                 </main>
             </div>
 
@@ -332,6 +322,28 @@
             <div class="character-tail"></div>
         </div>
     </div>
+
+<!-- Achievement Modal -->
+<div id="achievementModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl animate-float-in">
+        <div class="p-6 border-b-2 border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-500 to-pink-500">
+            <div class="flex items-center justify-between">
+                <h2 class="text-2xl font-bold text-white">🏅 Achievements</h2>
+                <button 
+                    onclick="app.toggleAchievementModal()"
+                    class="text-white hover:text-gray-200 transition-colors text-2xl hover:scale-110"
+                >
+                    ✕
+                </button>
+            </div>
+        </div>
+        <div id="achievementList" class="p-6 overflow-y-auto max-h-[calc(80vh-100px)] grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Achievement items will be populated here -->
+        </div>
+    </div>
+</div>
+
+<!-- Motivational Character -->
 
     <!-- TypeScript compilation -->
     <script src="https://unpkg.com/typescript@4.9.5/lib/typescript.js"></script>

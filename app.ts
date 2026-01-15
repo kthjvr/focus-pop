@@ -38,7 +38,6 @@ interface AppData {
     history: PomodoroSet[];
     achievements?: Achievement[]; 
     totalBreaks?: number;
-    achievementsExpanded?: boolean;
 }
 
 type ModeType = 'work' | 'short-break' | 'long-break';
@@ -243,29 +242,10 @@ class FocusPopApp {
                 </div>
             `).join('')}
         `;
-        
-        // Restore expanded state after rendering
-        if (this.achievementsExpanded) {
-            setTimeout(() => {
-                this.elements.achievementList.style.maxHeight = this.elements.achievementList.scrollHeight + 'px';
-            }, 0);
-        }
     }
 
-    public toggleAchievements(): void {
-        this.achievementsExpanded = !this.achievementsExpanded;
-        
-        if (this.achievementsExpanded) {
-            this.elements.achievementList.style.maxHeight = this.elements.achievementList.scrollHeight + 'px';
-            this.elements.achievementList.style.opacity = '1';
-            this.elements.achievementToggleIcon.style.transform = 'rotate(180deg)';
-        } else {
-            this.elements.achievementList.style.maxHeight = '0';
-            this.elements.achievementList.style.opacity = '0';
-            this.elements.achievementToggleIcon.style.transform = 'rotate(0deg)';
-        }
-        
-        this.saveData();
+    public toggleAchievementModal(): void {
+        this.elements.achievementModal.classList.toggle('hidden');
     }
 
     public exportData(): void {
@@ -278,7 +258,6 @@ class FocusPopApp {
             history: this.history,
             achievements: this.achievements,
             totalBreaks: this.totalBreaks,
-            achievementsExpanded: this.achievementsExpanded
         };
         
         const dataStr = JSON.stringify(data, null, 2);
@@ -334,7 +313,6 @@ class FocusPopApp {
                 this.tasks = importedData.tasks || [];
                 this.history = importedData.history || [];
                 this.totalBreaks = importedData.totalBreaks || 0;
-                this.achievementsExpanded = importedData.achievementsExpanded || false;
                 
                 // Restore theme
                 if (importedData.isDark) {
@@ -491,6 +469,8 @@ class FocusPopApp {
         dismissCharacter: document.getElementById('dismissCharacter') as HTMLButtonElement,
         historyList: document.getElementById('historyList') as HTMLDivElement,
         setNameInput: document.getElementById('setNameInput') as HTMLInputElement,
+        achievementModal: document.getElementById('achievementModal') as HTMLDivElement,
+        achievementBtn: document.getElementById('achievementBtn') as HTMLButtonElement,
         achievementList: document.getElementById('achievementList') as HTMLDivElement,
         achievementToggle: document.getElementById('achievementToggle') as HTMLButtonElement,
         achievementToggleIcon: document.getElementById('achievementToggleIcon') as HTMLSpanElement,
@@ -970,7 +950,6 @@ class FocusPopApp {
             history: this.history,
             achievements: this.achievements,
             totalBreaks: this.totalBreaks,
-            achievementsExpanded: this.achievementsExpanded 
         };
         
         localStorage.setItem('focusAppData', JSON.stringify(data));
@@ -989,7 +968,6 @@ class FocusPopApp {
             this.tasks = parsedData.tasks || [];
             this.history = parsedData.history || [];
             this.totalBreaks = parsedData.totalBreaks || 0;
-            this.achievementsExpanded = parsedData.achievementsExpanded || false;
             
             if (parsedData.achievements) {
                 parsedData.achievements.forEach(savedAch => {
@@ -1013,15 +991,6 @@ class FocusPopApp {
             this.updateThemeIcon();
             this.renderHistory();
             this.renderAchievements();
-            
-            // Restore expanded state
-            if (this.achievementsExpanded) {
-                setTimeout(() => {
-                    this.elements.achievementList.style.maxHeight = this.elements.achievementList.scrollHeight + 'px';
-                    this.elements.achievementList.style.opacity = '1';
-                    this.elements.achievementToggleIcon.style.transform = 'rotate(180deg)';
-                }, 100);
-            }
         }
     }
 }
